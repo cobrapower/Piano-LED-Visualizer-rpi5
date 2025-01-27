@@ -128,10 +128,10 @@ disable_audio_output() {
 # Function to install RTP-midi server
 install_rtpmidi_server() {
   execute_command "cd /home/"
-  execute_command "sudo wget https://github.com/davidmoreno/rtpmidid/releases/download/v24.12/rtpmidid_24.12.2_armhf.deb" "check_internet"
-  execute_command "sudo dpkg -i rtpmidid_24.12.2_armhf.deb"
+  execute_command "sudo wget https://github.com/davidmoreno/rtpmidid/releases/download/v24.12/rtpmidid_24.12.2_arm64.deb" "check_internet"
+  execute_command "sudo dpkg -i rtpmidid_24.12.2_arm64.deb"
   execute_command "sudo apt -f install"
-  execute_command "rm rtpmidid_24.12.2_armhf.deb"
+  execute_command "rm rtpmidid_24.12.2_arm64.deb"
 }
 
 
