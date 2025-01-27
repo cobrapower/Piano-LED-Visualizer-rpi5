@@ -143,8 +143,8 @@ install_piano_led_visualizer() {
   execute_command "sudo chmod -R u+rwx ${WORKSPACE_DIR}"
   execute_command "cd ${WORKSPACE_DIR}"
   execute_command "python3 -m venv plv-venv"
-  execute_command "source plv-venv/bin/activate"
-  execute_command "sudo pip3 install -r requirements.txt" "check_internet"
+  # execute_command "source plv-venv/bin/activate"
+  execute_command "plv-venv/bin/pip3 install -r requirements.txt" "check_internet"
   # execute_command "sudo raspi-config nonint do_boot_behaviour B2"
   cat <<EOF | sudo tee /lib/systemd/system/visualizer.service > /dev/null
 [Unit]
