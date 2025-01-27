@@ -1,4 +1,4 @@
-RPi.GPIO
+rpi-lgpio
 webcolors~=1.13
 psutil~=5.9.5
 mido~=1.3.0
