@@ -6,6 +6,8 @@ display_error() {
   exit 1
 }
 
+WORKSPACE_DIR=/home/Piano-LED-Visualizer-rpi5
+
 # Function to execute a command and handle errors, with optional internet connectivity check
 execute_command() {
   local check_internet="$2"  # Check for internet if this argument is provided
@@ -109,18 +111,18 @@ EOF
 # Function to enable SPI interface
 enable_spi_interface() {
   # Edit config.txt file to enable SPI interface
-  execute_command "sudo sed -i '$ a\dtparam=spi=on' /boot/config.txt"
+  execute_command "sudo sed -i '$ a\dtparam=spi=on' /boot/firmware/config.txt"
 }
 
 # Function to install required packages
 install_packages() {
-  execute_command "sudo apt-get install -y ruby git python3-pip autotools-dev libtool autoconf libasound2 libavahi-client3 libavahi-common3 libc6 libfmt9 libgcc-s1 libstdc++6 python3 libopenblas-dev libavahi-client-dev libasound2-dev libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libatlas-base-dev libopenjp2-7 libtiff6 libjack0 libjack-dev fonts-freefont-ttf gcc make build-essential scons swig abcmidi" "check_internet"
+  execute_command "sudo apt-get install -y ruby git python3-pip autotools-dev libtool autoconf libasound2 libavahi-client3 libavahi-common3 libc6 libfmt9 libgcc-s1 libstdc++6 python3 libopenblas-dev libavahi-client-dev libasound2-dev libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libatlas-base-dev libopenjp2-7 libtiff6 libjack0 libjack-dev fonts-freefont-ttf gcc make build-essential scons swig abcmidi python3-venv" "check_internet"
 }
 
 # Function to disable audio output
 disable_audio_output() {
   echo 'blacklist snd_bcm2835' | sudo tee -a /etc/modprobe.d/snd-blacklist.conf > /dev/null
-  sudo sed -i 's/dtparam=audio=on/#dtparam=audio=on/' /boot/config.txt
+  sudo sed -i 's/dtparam=audio=on/#dtparam=audio=on/' /boot/firmware/config.txt
 }
 
 # Function to install RTP-midi server
@@ -136,12 +138,14 @@ install_rtpmidi_server() {
 # Function to install Piano-LED-Visualizer
 install_piano_led_visualizer() {
   execute_command "cd /home/"
-  execute_command "sudo git clone -b autoinstall-update https://github.com/onlaj/Piano-LED-Visualizer" "check_internet"
-  execute_command "sudo chown -R $USER:$USER /home/Piano-LED-Visualizer"
-  execute_command "sudo chmod -R u+rwx /home/Piano-LED-Visualizer"
-  execute_command "cd Piano-LED-Visualizer"
-  execute_command "sudo pip3 install -r requirements.txt --break-system-packages" "check_internet"
-  execute_command "sudo raspi-config nonint do_boot_behaviour B2"
+  execute_command "sudo git clone -b autoinstall-update https://github.com/cobrapower/Piano-LED-Visualizer-rpi5.git" "check_internet"
+  execute_command "sudo chown -R $USER:$USER ${WORKSPACE_DIR}"
+  execute_command "sudo chmod -R u+rwx ${WORKSPACE_DIR}"
+  execute_command "cd ${WORKSPACE_DIR}"
+  execute_command "python3 -m venv plv-venv"
+  execute_command "source plv-venv/bin/activate"
+  execute_command "sudo pip3 install -r requirements.txt" "check_internet"
+  # execute_command "sudo raspi-config nonint do_boot_behaviour B2"
   cat <<EOF | sudo tee /lib/systemd/system/visualizer.service > /dev/null
 [Unit]
 Description=Piano LED Visualizer
@@ -152,17 +156,47 @@ Wants=network-online.target
 WantedBy=multi-user.target
 
 [Service]
-ExecStart=sudo python3 /home/Piano-LED-Visualizer/visualizer.py
+ExecStart=sudo ${WORKSPACE_DIR}/plv-venv/bin/python3 ${WORKSPACE_DIR}/visualizer.py -m true
 Restart=always
 Type=simple
-User=plv
-Group=plv
+User=$USER
+Group=$USER
 EOF
   execute_command "sudo systemctl daemon-reload"
   execute_command "sudo systemctl enable visualizer.service"
   execute_command "sudo systemctl start visualizer.service"
 
-  execute_command "sudo chmod a+rwxX -R /home/Piano-LED-Visualizer/"
+  execute_command "sudo chmod a+rwxX -R ${WORKSPACE_DIR}"
+}
+
+patch_rpi_ws281x() {
+  # See https://github.com/jgarff/rpi_ws281x/wiki/Raspberry-Pi-5-Support
+
+  execute_command "sudo apt install linux-headers device-tree-compiler raspi-utils" "check_internet"
+
+  execute_command "git submodule update --init" "check_internet"
+  execute_command "cd rpi_ws281x/rp1_ws281x_pwm"
+  execute_command "make"
+  execute_command "./dts.sh"
+  execute_command "cd .."
+
+  # Create systemd to load kernel module patch at startup (ugly) 
+  execute_command "sudo chmod +x patch_ws281x.sh"
+  cat <<EOF | sudo tee /lib/systemd/system/patch_ws281x.service > /dev/null
+[Unit]
+Description=Patch for LED Visualizer
+After=network-online.target
+Wants=network-online.target
+
+[Install]
+WantedBy=visualizer.service
+
+[Service]
+ExecStart=sudo ${WORKSPACE_DIR}/patch_ws281x.sh
+Type=simple
+User=$USER
+Group=$USER
+EOF
 }
 
 finish_installation() {
