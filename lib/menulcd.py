@@ -16,7 +16,7 @@ from lib.log_setup import logger
 
 
 class MenuLCD:
-    def __init__(self, xml_file_name, args, usersettings, ledsettings, ledstrip, learning, saving, midiports, hotspot, platform):
+    def __init__(self, xml_file_name, args, usersettings, ledsettings, ledstrip, learning, saving, midiports, hotspot, platform, disablelcd):
         self.list_count = None
         self.parent_menu = None
         self.current_choice = None
@@ -37,8 +37,12 @@ class MenuLCD:
         self.lcd_ttf = font_dir + "/FreeSansBold.ttf"
         if not os.path.exists(self.lcd_ttf):
             raise RuntimeError("Cannot locate font file: %s" % self.lcd_ttf)
-
-        if args.display == '1in3':
+        if disablelcd:
+            from lib.null_drivers import LCDNull
+            self.LCD = LCDNull()
+            self.font = ImageFont.truetype(font_dir + '/FreeMonoBold.ttf', self.scale(10))
+            self.image = Image.open('webinterface/static/logo240_240.bmp')
+        elif args.display == '1in3':
             self.LCD = LCD_1in3.LCD()
             self.font = ImageFont.truetype(font_dir + '/FreeMonoBold.ttf', self.scale(10))
             self.image = Image.open('webinterface/static/logo240_240.bmp')

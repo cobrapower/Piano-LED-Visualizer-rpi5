@@ -23,6 +23,31 @@ class SPInull():
     def pass_func(self, *args, **kwargs):
         pass
 
+class LCDNull(object):
+    def __init__(self):
+        self.width = 240
+        self.height = 240
+        self.font_scale = 1.875
+    def command(self, cmd):
+        pass
+
+    def data(self, val):
+        pass
+
+    def LCD_Init(self):
+        pass
+
+    def LCD_Reset(self):
+       pass
+        
+    def LCD_SetWindows(self, Xstart, Ystart, Xend, Yend):
+        pass
+    
+    def LCD_ShowImage(self,Image,Xstart,Ystart):
+        pass
+        
+    def LCD_Clear(self):
+        pass	
 
 # Color from older version of rpi-ws281x
 def Color(red, green, blue, white=0):

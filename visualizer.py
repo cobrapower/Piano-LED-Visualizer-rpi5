@@ -67,6 +67,8 @@ parser.add_argument('-w', '--webinterface', help="disable webinterface: 'true' (
 parser.add_argument('-r', '--rotatescreen', default="false", help="rotate screen: 'false' (default) | 'true'")
 parser.add_argument('-a', '--appmode', default=appmode_default, help="appmode: 'platform' (default) | 'app'")
 parser.add_argument('-l', '--leddriver', default="rpi_ws281x", help="leddriver: 'rpi_ws281x' (default) | 'emu' ")
+parser.add_argument('-m', '--dismenulcd', default="false", help="disable lcd: 'false' (default) | 'true' ")
+
 args = parser.parse_args()
 
 
@@ -103,15 +105,16 @@ JPRESS = 13
 BACKLIGHT = 24
 # pins are interpreted as BCM pins.
 GPIO.setmode(GPIO.BCM)
-# Sets the pin as input and sets Pull-up mode for the pin.
-GPIO.setup(KEYRIGHT, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEYLEFT, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEYUP, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEYDOWN, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEY1, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEY2, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(KEY3, GPIO.IN, GPIO.PUD_UP)
-GPIO.setup(JPRESS, GPIO.IN, GPIO.PUD_UP)
+if args.dismenulcd != "true": 
+    # Sets the pin as input and sets Pull-up mode for the pin.
+    GPIO.setup(KEYRIGHT, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEYLEFT, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEYUP, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEYDOWN, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEY1, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEY2, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(KEY3, GPIO.IN, GPIO.PUD_UP)
+    GPIO.setup(JPRESS, GPIO.IN, GPIO.PUD_UP)
 
 usersettings = UserSettings()
 midiports = MidiPorts(usersettings)
@@ -129,7 +132,7 @@ learning = LearnMIDI(usersettings, ledsettings, midiports, ledstrip)
 hotspot = Hotspot(platform)
 saving = SaveMIDI()
 menu = MenuLCD("config/menu.xml", args, usersettings, ledsettings, ledstrip, learning, saving,
-               midiports, hotspot, platform)
+            midiports, hotspot, platform, args.dismenulcd == 'true')
 
 midiports.add_instance(menu)
 ledsettings.add_instance(menu, ledstrip)
@@ -246,63 +249,63 @@ while True:
             ledsettings = LedSettings(usersettings)
             ledstrip = LedStrip(usersettings, ledsettings)
             menu = MenuLCD("config/menu.xml", args, usersettings, ledsettings, ledstrip, learning,
-                           saving, midiports, hotspot, platform)
+                           saving, midiports, hotspot, platform, args.dismenulcd == 'true')
             menu.show()
             ledsettings.add_instance(menu, ledstrip)
 
     platform.manage_hotspot(hotspot, usersettings, midiports)
 
     # Process GPIO keys
+    if args.dismenulcd != 'true':
+        if GPIO.input(KEYUP) == 0:
+            midiports.last_activity = time.time()
+            menu.change_pointer(0)
+            while GPIO.input(KEYUP) == 0:
+                time.sleep(0.001)
+        if GPIO.input(KEYDOWN) == 0:
+            midiports.last_activity = time.time()
+            menu.change_pointer(1)
+            while GPIO.input(KEYDOWN) == 0:
+                time.sleep(0.001)
+        if GPIO.input(KEY1) == 0:
+            midiports.last_activity = time.time()
+            menu.enter_menu()
+            while GPIO.input(KEY1) == 0:
+                time.sleep(0.001)
+        if GPIO.input(KEY2) == 0:
+            midiports.last_activity = time.time()
+            menu.go_back()
+            if not menu.screensaver_is_running:
+                fastColorWipe(ledstrip.strip, True, ledsettings)
+            while GPIO.input(KEY2) == 0:
+                time.sleep(0.01)
+        if GPIO.input(KEY3) == 0:
+            midiports.last_activity = time.time()
+            if ledsettings.sequence_active:
+                ledsettings.set_sequence(0, 1)
+            else:
+                active_input = usersettings.get_setting_value("input_port")
+                secondary_input = usersettings.get_setting_value("secondary_input_port")
+                midiports.change_port("inport", secondary_input)
+                usersettings.change_setting_value("secondary_input_port", active_input)
+                usersettings.change_setting_value("input_port", secondary_input)
+                fastColorWipe(ledstrip.strip, True, ledsettings)
 
-    if GPIO.input(KEYUP) == 0:
-        midiports.last_activity = time.time()
-        menu.change_pointer(0)
-        while GPIO.input(KEYUP) == 0:
-            time.sleep(0.001)
-    if GPIO.input(KEYDOWN) == 0:
-        midiports.last_activity = time.time()
-        menu.change_pointer(1)
-        while GPIO.input(KEYDOWN) == 0:
-            time.sleep(0.001)
-    if GPIO.input(KEY1) == 0:
-        midiports.last_activity = time.time()
-        menu.enter_menu()
-        while GPIO.input(KEY1) == 0:
-            time.sleep(0.001)
-    if GPIO.input(KEY2) == 0:
-        midiports.last_activity = time.time()
-        menu.go_back()
-        if not menu.screensaver_is_running:
-            fastColorWipe(ledstrip.strip, True, ledsettings)
-        while GPIO.input(KEY2) == 0:
-            time.sleep(0.01)
-    if GPIO.input(KEY3) == 0:
-        midiports.last_activity = time.time()
-        if ledsettings.sequence_active:
-            ledsettings.set_sequence(0, 1)
-        else:
-            active_input = usersettings.get_setting_value("input_port")
-            secondary_input = usersettings.get_setting_value("secondary_input_port")
-            midiports.change_port("inport", secondary_input)
-            usersettings.change_setting_value("secondary_input_port", active_input)
-            usersettings.change_setting_value("input_port", secondary_input)
-            fastColorWipe(ledstrip.strip, True, ledsettings)
-
-        while GPIO.input(KEY3) == 0:
-            time.sleep(0.01)
-    if GPIO.input(KEYLEFT) == 0:
-        midiports.last_activity = time.time()
-        menu.change_value("LEFT")
-        time.sleep(0.1)
-    if GPIO.input(KEYRIGHT) == 0:
-        midiports.last_activity = time.time()
-        menu.change_value("RIGHT")
-        time.sleep(0.1)
-    if GPIO.input(JPRESS) == 0:
-        midiports.last_activity = time.time()
-        menu.speed_change()
-        while GPIO.input(JPRESS) == 0:
-            time.sleep(0.01)
+            while GPIO.input(KEY3) == 0:
+                time.sleep(0.01)
+        if GPIO.input(KEYLEFT) == 0:
+            midiports.last_activity = time.time()
+            menu.change_value("LEFT")
+            time.sleep(0.1)
+        if GPIO.input(KEYRIGHT) == 0:
+            midiports.last_activity = time.time()
+            menu.change_value("RIGHT")
+            time.sleep(0.1)
+        if GPIO.input(JPRESS) == 0:
+            midiports.last_activity = time.time()
+            menu.speed_change()
+            while GPIO.input(JPRESS) == 0:
+                time.sleep(0.01)
 
     # Fade processing
     for n, strength in enumerate(ledstrip.keylist):
