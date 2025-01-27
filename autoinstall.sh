@@ -138,7 +138,7 @@ install_rtpmidi_server() {
 # Function to install Piano-LED-Visualizer
 install_piano_led_visualizer() {
   execute_command "cd /home/"
-  execute_command "sudo git clone -b autoinstall-update https://github.com/cobrapower/Piano-LED-Visualizer-rpi5.git" "check_internet"
+  execute_command "sudo git clone -b develop/pi5 https://github.com/cobrapower/Piano-LED-Visualizer-rpi5.git" "check_internet"
   execute_command "sudo chown -R $USER:$USER ${WORKSPACE_DIR}"
   execute_command "sudo chmod -R u+rwx ${WORKSPACE_DIR}"
   execute_command "cd ${WORKSPACE_DIR}"
