@@ -4,3 +4,7 @@
 config/settings.xml
 webinterface/node_modules
 
+# Python virtual env
+my-venv
+venv
+plv-venv
