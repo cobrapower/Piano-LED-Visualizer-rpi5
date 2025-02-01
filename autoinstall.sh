@@ -178,7 +178,7 @@ patch_rpi_ws281x() {
   execute_command "cd rpi_ws281x/rp1_ws281x_pwm"
   execute_command "make"
   execute_command "./dts.sh"
-  execute_command "cd .."
+  execute_command "cd ../.."
 
   # Create systemd to load kernel module patch at startup (ugly) 
   execute_command "sudo chmod +x patch_ws281x.sh"
@@ -192,7 +192,7 @@ Wants=network-online.target
 WantedBy=visualizer.service
 
 [Service]
-ExecStart=sudo ${WORKSPACE_DIR}/patch_ws281x.sh
+ExecStart=sudo ${WORKSPACE_DIR}/patch_ws281x.sh ${WORKSPACE_DIR}
 Type=simple
 User=$USER
 Group=$USER
