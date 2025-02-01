@@ -172,7 +172,7 @@ EOF
 patch_rpi_ws281x() {
   # See https://github.com/jgarff/rpi_ws281x/wiki/Raspberry-Pi-5-Support
 
-  execute_command "sudo apt install linux-headers device-tree-compiler raspi-utils" "check_internet"
+  execute_command "sudo apt install -y linux-headers device-tree-compiler raspi-utils" "check_internet"
 
   execute_command "git submodule update --init" "check_internet"
   execute_command "cd rpi_ws281x/rp1_ws281x_pwm"
@@ -238,4 +238,5 @@ install_packages
 disable_audio_output
 install_rtpmidi_server
 install_piano_led_visualizer
+patch_rpi_ws281x
 finish_installation
