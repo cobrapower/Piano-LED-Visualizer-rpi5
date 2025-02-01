@@ -8,7 +8,8 @@ from lib.log_setup import logger
 import re
 import socket
 from collections import defaultdict
-
+import sys 
+file_path = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 class Hotspot:
     def __init__(self, hotspot):
@@ -16,7 +17,7 @@ class Hotspot:
         self.time_without_wifi = 0
         self.last_wifi_check_time = 0
 
-        subprocess.run("sudo chmod a+rwxX -R /home/Piano-LED-Visualizer/", shell=True, check=True)
+        subprocess.run("sudo chmod a+rwxX -R " + file_path, shell=True, check=True)
 
 class PlatformBase:
     def __getattr__(self, name):
