@@ -197,6 +197,9 @@ Type=simple
 User=$USER
 Group=$USER
 EOF
+  execute_command "sudo systemctl daemon-reload"
+  execute_command "sudo systemctl enable patch_ws281x.service"
+  execute_command "sudo systemctl start patch_ws281x.service"
 }
 
 finish_installation() {
